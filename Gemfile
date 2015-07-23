@@ -13,7 +13,7 @@ gem 'vcr'
 
 # for Heroku deployment - as described in Ap. A of ELLS book
 group :development, :test do
-  gem 'delorean'
+  gem 'timecop'
   gem 'metric_fu'
   gem 'database_cleaner', '1.0.1'
   gem 'launchy'
@@ -41,7 +41,7 @@ group :test do
   gem 'cucumber-rails', :require => false
   gem 'cucumber-rails-training-wheels'
   gem 'capybara', '2.4.1'
-  gem "capybara-webkit", "~> 1.1.0"
+  gem "capybara-webkit", "~> 1.6.0"
   gem 'factory_girl_rails', :require => false
   gem 'webmock', '1.20.0'
   gem 'uri-handler'
@@ -50,9 +50,9 @@ group :test do
 end
 
 group :production do
+  gem 'rails_12factor'
   gem 'newrelic_rpm'
 end
-
 
 gem 'coffee-rails', "4.1.0"
 gem 'uglifier', '2.5.3'
