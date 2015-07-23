@@ -1,16 +1,14 @@
-
-
 Then(/^I should see an infowindow when I click on the map markers:$/) do |table|
   expect(page).to have_css('.measle', :count => table.raw.flatten.length)
   Organisation.where(name: table.raw.flatten).pluck(:name, :description, :id).map {|name, desc, id| [name, smart_truncate(desc, 42), id]}.each do |name, desc, id|
-      expect(page).to have_css(".measle[data-id='#{id}']")
-      icon =find(".measle[data-id='#{id}']")
-      click_twice icon
-      expect(page).to have_css('.arrow_box')
-      expect(find('.arrow_box').text).to include(desc)
-      expect(find('.arrow_box').text).to include(name)
-      link = find('.arrow_box').find('a')[:href]
-      expect(link).to eql(organisation_path(id))
+    expect(page).to have_css(".measle[data-id='#{id}']")
+    icon =find(".measle[data-id='#{id}']")
+    click_twice icon
+    expect(page).to have_css('.arrow_box')
+    expect(find('.arrow_box').text).to include(desc)
+    expect(find('.arrow_box').text).to include(name)
+    link = find('.arrow_box').find('a')[:href]
+    expect(link).to eql(organisation_path(id))
   end
 end
 def click_twice elt
@@ -22,12 +20,14 @@ def find_map_icon klass, org_id
   find(".#{klass}[data-id='#{org_id}']")
 end
 Then /^the organisation "(.*?)" should have a (large|small) icon$/ do |name, icon_size|
+  VCR.insert_cassette('anotherVCR.yml', :record => :new_episodes) do
   org_id = Organisation.find_by(name: name).id
   klass = (icon_size == "small") ? "measle" : "marker"
   if klass == "measle"
     expect(find_map_icon(klass, org_id)["src"]).to eq "https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png"
   else
     expect(find_map_icon(klass, org_id)["src"]).to eq "http://mt.googleapis.com/vt/icon/name=icons/spotlight/spotlight-poi.png"
+  end
   end
 end
 

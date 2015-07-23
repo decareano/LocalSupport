@@ -6,6 +6,7 @@ gem 'pg'
 gem 'devise', '~> 3.4.0'
 gem 'devise_invitable', '~> 1.3.0'
 gem 'heroku-api'
+gem 'vcr'
 
 # Bundle edge Rails instead:
 # gem 'rails',     :git => 'git://github.com/rails/rails.git'
@@ -15,7 +16,6 @@ group :development, :test do
   gem 'delorean'
   gem 'metric_fu'
   gem 'database_cleaner', '1.0.1'
-  gem 'vcr'
   gem 'launchy'
   gem 'simplecov'
   gem 'sinatra-base'
