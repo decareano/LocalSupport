@@ -36,7 +36,6 @@ Then /^the (proposed organisation|organisation) "(.*?)" should have a (large|sma
   else
     expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://mt.googleapis.com/vt/icon/name=icons/spotlight/spotlight-poi.png"
   end
-  end
 end
 
 Then /^I should( not)? see the following (measle|vol_op) markers in the map:$/ do |negative, klass, table|
