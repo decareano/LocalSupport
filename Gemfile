@@ -28,6 +28,7 @@ group :development, :test do
   gem 'jasmine-jquery-rails', '2.0.2'
   #gem 'better_errors'
   gem 'binding_of_caller' # plays well with better_errors
+
 end
 
 group :development do
@@ -46,6 +47,7 @@ group :test do
   gem 'uri-handler'
   gem 'selenium'
   gem 'selenium-client'
+  gem 'vcr'
 end
 
 group :production do
