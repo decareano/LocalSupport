@@ -38,8 +38,10 @@ describe VolunteerOpsController, :type => :controller do
     it { expect(subject['infowindow']).to include op.title }
     it { expect(subject['infowindow']).to include op.description }
     context 'markers without coords omitted' do
-      let(:org) { create :organisation, address: "0 pinnner road", latitude: nil, longitude: nil }
-      it { expect(JSON.parse(controller.send(:build_map_markers, [org]))).to be_empty }
+      VCR.use_cassette "marker" do
+        let(:org) { create :organisation, address: "0 pinnner road", latitude: nil, longitude: nil }
+        it { expect(JSON.parse(controller.send(:build_map_markers, [org]))).to be_empty }
+      end
     end
   end
 

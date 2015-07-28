@@ -93,12 +93,10 @@ When(/^I sign in as "(.*?)" with password "(.*?)" via email confirmation$/) do |
 end
 
 Given /^I have a "([^\"]+)" cookie set to "([^\"]+)"$/ do |key, value|
-  VCR.use_cassette( "cookies" ) do
     headers = {}
     Rack::Utils.set_cookie_header!(headers, key, value)
     cookie_string = headers['Set-Cookie']
     Capybara.current_session.driver.browser.set_cookie(cookie_string)
-  end
 end
 
 And(/^cookies are approved$/) do

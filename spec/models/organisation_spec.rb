@@ -216,7 +216,7 @@ describe Organisation, :type => :model do
     expect("HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW".humanized_all_first_capitals).to eq("Harrow Baptist Church, College Road, Harrow")
   end
 
-  describe 'Creating of Organisations from CSV file' do
+  describe 'Creating of Organisations from CSV file', :vcr => { :cassette_name => "csv" } do
     before(:all){ @headers = 'Title,Charity Number,Activities,Contact Name,Contact Address,website,Contact Telephone,date registered,date removed,accounts date,spending,income,company number,OpenlyLocalURL,twitter account name,facebook account name,youtube account name,feed url,Charity Classification,signed up for 1010,last checked,created at,updated at,Removed?'.split(',')}
 
     it 'must not override an existing organisation' do
@@ -295,8 +295,10 @@ describe Organisation, :type => :model do
 
 
     def create_organisation(fields)
-      row = CSV::Row.new(@headers, fields.flatten)
-      Organisation.create_from_array(row, true)
+      VCR.use_cassette "csv_cassete" do
+        row = CSV::Row.new(@headers, fields.flatten)
+        Organisation.create_from_array(row, true)
+      end
     end
 
     context "importing category relations" do
@@ -528,14 +530,14 @@ describe Organisation, :type => :model do
     end
 
     describe "acts_as_gmappable's behavior is curtailed by the { :process_geocoding => :run_geocode? } option" do
-      it 'no geocoding allowed when saving if the org already has an address and coordinates' do
+      it 'no geocoding allowed when saving if the org already has an address and coordinates'  do
         expect_any_instance_of(Organisation).not_to receive(:geocode)
         @org2.email = 'something@example.com'
         @org2.save!
       end
 
       # it will try to rerun incomplete geocodes, but not valid ones, so no harm is done
-      it 'geocoding allowed when saving if the org has an address BUT NO coordinates' do
+      it 'geocoding allowed when saving if the org has an address BUT NO coordinates'  do
         expect_any_instance_of(Organisation).to receive(:geocode)
         @org2.longitude = nil ; @org2.latitude = nil
         @org2.email = 'something@example.com'
@@ -605,21 +607,21 @@ describe Organisation, :type => :model do
   end
 
   describe "acts_as_gmappable's behavior is curtailed by the { :process_geocoding => :run_geocode? } option" do
-    it 'no geocoding allowed when saving if the org already has an address and coordinates' do
+    it 'no geocoding allowed when saving if the org already has an address and coordinates'  do
       expect_any_instance_of(Organisation).not_to receive(:geocode)
       @org2.email = 'something@example.com'
       @org2.save!
     end
 
     # it will try to rerun incomplete geocodes, but not valid ones, so no harm is done
-    it 'geocoding allowed when saving if the org has an address BUT NO coordinates' do
+    it 'geocoding allowed when saving if the org has an address BUT NO coordinates'  do
       expect_any_instance_of(Organisation).to receive(:geocode)
       @org2.longitude = nil ; @org2.latitude = nil
       @org2.email = 'something@example.com'
       @org2.save!
     end
 
-    it 'geocoding allowed when saving if the org address changed' do
+    it 'geocoding allowed when saving if the org address changed'  do
       expect_any_instance_of(Organisation).to receive(:geocode)
       @org2.address = '777 pinner road'
       @org2.save!

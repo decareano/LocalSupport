@@ -96,3 +96,7 @@ end
 After('@time_travel') do
   Timecop.return
 end
+
+# preventing vcr_setup file dublication in rspec an cucumber
+# http://stackoverflow.com/questions/5312553/where-to-put-vcr-config-when-using-both-rspec-and-cucumber
+require File.expand_path("../../../spec/support/vcr_setup", __FILE__)
