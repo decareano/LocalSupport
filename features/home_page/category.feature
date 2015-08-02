@@ -111,6 +111,7 @@ Feature: Categories of charities
       | I help people         |
       | I advocate for people |
 
+  
   Scenario: Categories are sticky
     Given I select the "Plant Welfare" category from What They Do
     And I select the "Advocacy" category from How They Help

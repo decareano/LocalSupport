@@ -87,7 +87,4 @@ RSpec.configure do |config|
 VCR.configure do |c|
   c.cassette_library_dir = 'fixtures/vcr_cassettes'
   c.hook_into :webmock
-  c.around_http_request do |request|
-    VCR.use_cassette('users', &request)
-  end
 end
