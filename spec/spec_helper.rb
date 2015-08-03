@@ -14,6 +14,9 @@
 # users commonly want.
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+require 'vcr'
+
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
@@ -84,5 +87,20 @@ RSpec.configure do |config|
   # as the one that triggered the failure.
   Kernel.srand config.seed
 =end
+
 end
-require "support/vcr_setup"
+
+VCR.configure do |c|
+  c.cassette_library_dir = 'spec/vcr_cassettes'
+  c.hook_into :webmock
+  c.allow_http_connections_when_no_cassette = true
+  c.configure_rspec_metadata!
+end
+
+RSpec.configure do |c|
+  c.treat_symbols_as_metadata_keys_with_true_values = true
+end
+
+
+
+

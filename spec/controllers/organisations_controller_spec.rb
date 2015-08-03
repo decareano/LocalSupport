@@ -13,7 +13,7 @@ describe OrganisationsController, :type => :controller do
     end
   end
 
-  describe "#build_map_markers" do
+  describe "#build_map_markers", :vcr do
     render_views
     let!(:org) { create :organisation }
     let(:org_relation){Organisation.all}
@@ -24,12 +24,10 @@ describe OrganisationsController, :type => :controller do
     it { expect(subject['infowindow']).to include org.name }
     it { expect(subject['infowindow']).to include org.description }
     context 'markers without coords omitted' do
-      VCR.use_cassette "marker" do
-        let!(:org) { create :organisation, address: '150 pinner rd', latitude: nil, longitude: nil }
-        it { expect(JSON.parse(controller.send(:build_map_markers, org_relation))).to be_empty }
-      end
+      let!(:org) { create :organisation, address: '150 pinner rd', latitude: nil, longitude: nil }
+      it { expect(JSON.parse(controller.send(:build_map_markers, org_relation))).to be_empty }
     end
-  end
+end
 
   describe "GET search" do
 
