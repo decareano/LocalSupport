@@ -25,7 +25,7 @@ describe VolunteerOpsController, :type => :controller do
     end
   end
 
-  describe "#build_map_markers" do
+  describe "#build_map_markers", vcr: true do
     render_views
     let(:org) { create :organisation }
     let!(:op) { create :volunteer_op, organisation: org }
@@ -41,7 +41,7 @@ describe VolunteerOpsController, :type => :controller do
       let(:org) { create :organisation, address: "0 pinnner road", latitude: nil, longitude: nil }
       it { expect(JSON.parse(controller.send(:build_map_markers, [org]))).to be_empty }
     end
-  end
+end
 
   describe 'GET index' do
     before :each do

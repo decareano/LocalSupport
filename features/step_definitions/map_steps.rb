@@ -11,14 +11,17 @@ Then(/^I should see an infowindow when I click on the map markers:$/) do |table|
       expect(link).to eql(organisation_path(id))
   end
 end
+
 def click_twice elt
   elt.trigger('click')
   elt.trigger('click')
 end
+
 def find_map_icon klass, org_id
   expect(page).to have_css ".#{klass}[data-id='#{org_id}']"
   find(".#{klass}[data-id='#{org_id}']")
 end
+
 Then /^the organisation "(.*?)" should have a (large|small) icon$/ do |name, icon_size|
   org_id = Organisation.find_by(name: name).id
   klass = (icon_size == "small") ? "measle" : "marker"
@@ -81,14 +84,17 @@ end
 #TODO if this ever needs refactoring, factor it in with what's in
 # config/initializers/webmock.rb
 def stub_request_with_address(address, body = nil)
-  filename = "#{address.gsub(/\s/, '_')}.json"
-  filename = File.read "test/fixtures/#{filename}"
-  # Webmock shows URLs with '%20' standing for space, but uri_encode susbtitutes with '+'
-  # So let's fix
-  addr_in_uri = address.uri_encode.gsub(/\+/, "%20")
-  # Stub request, which URL matches Regex
-  stub_request(:get, /http:\/\/maps.googleapis.com\/maps\/api\/geocode\/json\?address=#{addr_in_uri}/).
-      to_return(status => 200, :body => body || filename, :headers => {})
+  VCR.use_cassette( "googleapis" ) do
+    filename = "#{address.gsub(/\s/, '_')}.json"
+    filename = File.read "test/fixtures/#{filename}"
+    # Webmock shows URLs with '%20' standing for space, but uri_encode susbtitutes with '+'
+    # So let's fix
+    addr_in_uri = address.uri_encode.gsub(/\+/, "%20")
+    # Stub request, which URL matches Regex
+    stub_request(:get, /http:\/\/maps.googleapis.com\/maps\/api\/geocode\/json\?address=#{addr_in_uri}/).
+        to_return(status => 200, :body => body || filename, :headers => {})
+        
+  end
 end
 
 Given /Google is indisposed for "(.*)"/ do  |address|
@@ -104,3 +110,4 @@ And(/^"(.*?)" should not have nil coordinates$/) do |name|
   org.latitude.should_not be_nil
   org.longitude.should_not be_nil
 end
+

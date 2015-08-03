@@ -13,7 +13,7 @@ describe OrganisationsController, :type => :controller do
     end
   end
 
-  describe "#build_map_markers" do
+  describe "#build_map_markers", vcr: true do
     render_views
     let!(:org) { create :organisation }
     let(:org_relation){Organisation.all}
@@ -27,7 +27,7 @@ describe OrganisationsController, :type => :controller do
       let!(:org) { create :organisation, address: '150 pinner rd', latitude: nil, longitude: nil }
       it { expect(JSON.parse(controller.send(:build_map_markers, org_relation))).to be_empty }
     end
-  end
+end
 
   describe "GET search" do
 
