@@ -13,7 +13,7 @@ describe OrganisationsController, :type => :controller do
     end
   end
 
-  describe "#build_map_markers", :vcr do
+  describe "#build_map_markers", vcr: true do
     render_views
     let!(:org) { create :organisation }
     let(:org_relation){Organisation.all}

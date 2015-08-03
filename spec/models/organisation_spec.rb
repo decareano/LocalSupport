@@ -216,7 +216,7 @@ describe Organisation, :type => :model do
     expect("HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW".humanized_all_first_capitals).to eq("Harrow Baptist Church, College Road, Harrow")
   end
 
-  describe 'Creating of Organisations from CSV file', :vcr => { :cassette_name => "csv" } do
+  describe 'Creating of Organisations from CSV file', vcr: true do
     before(:all){ @headers = 'Title,Charity Number,Activities,Contact Name,Contact Address,website,Contact Telephone,date registered,date removed,accounts date,spending,income,company number,OpenlyLocalURL,twitter account name,facebook account name,youtube account name,feed url,Charity Classification,signed up for 1010,last checked,created at,updated at,Removed?'.split(',')}
 
     it 'must not override an existing organisation' do
@@ -295,10 +295,8 @@ describe Organisation, :type => :model do
 
 
     def create_organisation(fields)
-      VCR.use_cassette "csv_cassete" do
-        row = CSV::Row.new(@headers, fields.flatten)
-        Organisation.create_from_array(row, true)
-      end
+      row = CSV::Row.new(@headers, fields.flatten)
+      Organisation.create_from_array(row, true)
     end
 
     context "importing category relations" do

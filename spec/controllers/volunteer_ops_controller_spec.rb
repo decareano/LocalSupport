@@ -25,7 +25,7 @@ describe VolunteerOpsController, :type => :controller do
     end
   end
 
-  describe "#build_map_markers", :vcr => { :cassette_name => "marker", :record => :new_episodes } do
+  describe "#build_map_markers", vcr: true do
     render_views
     let(:org) { create :organisation }
     let!(:op) { create :volunteer_op, organisation: org }
