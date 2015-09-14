@@ -48,7 +48,7 @@ And /^I add "(.*?)" as a superadmin for "(.*?)" charity$/ do |superadmin_email, 
 end
 
 Then /^I should see the no charity superadmins message$/ do
-  expect(page).to have_content "This organisation has no superadmins yet"
+  expect(page).to have_content "This organisation has no admins yet"
 end
 
 Given /^I delete "(.*?)" charity$/ do |name|
@@ -83,19 +83,65 @@ When /^I search for "(.*?)"$/ do |text|
 end
 
 Given (/^I fill in the new charity page validly$/) do
-  stub_request_with_address("64 pinner road")
   fill_in 'organisation_address', :with => '64 pinner road'
   fill_in 'organisation_name', :with => 'Friendly charity'
 end
+
 Given (/^I fill in the new charity page validly including the categories:$/) do |categories_table|
+  fill_in 'organisation_address', :with => '64 pinner road'
+  fill_in 'organisation_name', :with => 'Friendly charity'
   categories_table.hashes.each do |cat|
     steps %Q{
       And I check the category "#{cat[:name]}"
     }
   end
-  stub_request_with_address("64 pinner road")
-  fill_in 'organisation_address', :with => '64 pinner road'
-  fill_in 'organisation_name', :with => 'Friendly charity'
+end
+
+Given(/^I am proposing an organisation$/) do
+  visit new_proposed_organisation_path
+  steps %Q{And I fill in the proposed charity page validly}
+end
+
+Given (/^I fill in the proposed charity page validly$/) do
+  proposed_org_fields.each do |key, val|
+    fill_in "proposed_organisation_#{key}", with: val
+  end
+  proposed_org_categories.each do |cat|
+    steps %Q{
+      And I check the category "#{cat}"
+    }
+  end
+end
+
+When(/^I check the confirmation box for "(.*?)"$/) do |text|
+  find(:xpath,"//label[text()='#{text}']/preceding-sibling::input[1]").set(true)
+end
+
+When(/^I uncheck the confirmation box for "(.*?)"$/) do |text|
+  find(:xpath,"//label[text()='#{text}']/preceding-sibling::input[1]").set(false)
+end
+
+Then(/^I should be on the proposed organisations show page for the organisation$/) do
+  expect(current_path).to eq proposed_organisation_path(ProposedOrganisation.find_by(name: proposed_org_fields[:name]))
+end
+
+Then(/^the proposed organisation should have been created$/) do
+  expect(ProposedOrganisation.find_by(name: 'Friendly charity')).not_to be_nil
+end
+
+Then (/the confirmation box named (.*) should be (checked|unchecked)$/) do |category, status|
+  assertion = (status == 'checked') ? :should : :should_not
+  page.find(:xpath, "//label[text()='#{category}']/preceding-sibling::input[1]").send(assertion, be_checked)
+end
+
+
+Then(/^I should see all the proposed organisation fields$/) do
+  proposed_org_fields.each_value do |value|
+    expect(page).to have_content(value)
+  end
+  proposed_org_categories.each do |cat|
+    expect(page).to have_content(cat)
+  end
 end
 
 Then /^the contact information should be available$/ do
@@ -104,12 +150,14 @@ Then /^the contact information should be available$/ do
     Then I should see "Contact Info Email us: contact@voluntaryactionharrow.org.uk Phone Us: 020 8861 5894 Write to Us: The Lodge, 64 Pinner Road, Harrow, Middlesex, HA1 4HZ Find Us: On Social Media (Click Here)"
    }
 end
+
 Then /^the about us should be available$/ do
   steps %Q{
     When I follow "About Us"
     Then I should see "About Us Supporting groups in Harrow We are a not-for-profit workers co-operative who support people and not-for-profit organisations to make a difference in their local community by: Working with local people and groups to identify local needs and develop appropriate action. Providing a range of services that help organisations to succeed. Supporting and encouraging the growth of co-operative movement. How do we support? Find out here (VAH in a nutshell) What is a Workers Co-operative? A workers co-operative is a business owned and democratically controlled by their employee members using co-operative principles. They are an attractive and increasingly relevant alternative to traditional investor owned models of enterprise. (Click here for more details)"
   }
 end
+
 Given /^I update "(.*?)" charity address to be "(.*?)"( when Google is indisposed)?$/ do |name, address, indisposed|
   steps %Q{
     Given I visit the show page for the organisation named "#{name}"
@@ -163,7 +211,6 @@ Given /^I edit the charity email to be "(.*?)"$/ do |email|
 end
 
 When /^I edit the charity address to be "(.*?)"$/ do |address|
-  stub_request_with_address(address)
   fill_in('organisation_address', :with => address)
 end
 
@@ -270,9 +317,19 @@ Then /^I should see "([^"]*)" and "([^"]*)"$/ do |text1, text2|
   expect(page).to have_content text2
 end
 
-Then /^I should( not)? see "((?:(?!before|").)+)"$/ do |negate, text|
+Then /^I should( not)? see "([^"]*)"$/ do |negate, text|
   expectation_method = negate ? :not_to : :to
   expect(page).send(expectation_method, have_content(text))
+end
+
+Then(/^I should see "(.*?)" within "(.*?)"$/) do |text, selector|
+  within('#' + selector) { expect(page).to have_content text}
+end
+
+Then(/^I should see the following:$/) do |table|
+  table.rows.each do |text|
+    expect(page).to have_content text.first
+  end
 end
 
 Then(/^I should( not)? see a link or button "(.*?)"$/) do |negate, link|
@@ -285,12 +342,15 @@ Then(/^the navbar should( not)? have a link to (.*?)$/) do |negate, link|
   within('#navbar') { expect(page).send(expectation_method, have_selector(:link_or_button, link)) }
 end
 
+Then(/^I should not see "(.*?)"  within "(.*?)"$/) do |text, selector|
+  within('.' + selector) { expect(page).not_to have_content text}
+end
+
 Given /^I edit the charity address to be "(.*?)" when Google is indisposed$/ do |address|
   body = %Q({
 "results" : [],
 "status" : "OVER_QUERY_LIMIT"
 })
-  stub_request_with_address(address, body)
   fill_in('organisation_address', :with => address)
 end
 
@@ -329,7 +389,6 @@ And /^I click "(.*)" on the "(.*)" page and stay there$/  do |link, org_name|
     Then I should be on the show page for the organisation named "#{org_name}"
   }
 end
-
 
 Given /^"(.*)"'s request status for "(.*)" should be updated appropriately$/ do |email, org_name|
   steps %Q{
@@ -463,10 +522,10 @@ Given /^debugger$/ do
   debugger
   puts ""
 end
+
 Given /^I run the invite migration$/ do
 
 end
-
 
 Given(/^I can run the rake task "(.*?)"$/) do |task|
   stdout, stderr, status = Open3.capture3("#{task}")

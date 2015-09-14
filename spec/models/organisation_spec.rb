@@ -17,26 +17,11 @@ describe Organisation, :type => :model do
                               :description => 'Care for the elderly', :address => '64 pinner road', :postcode => 'HA1 3RE', :donation_info => 'www.indian-elders.co.uk/donate')
     @org2.categories << @category1
     @org2.categories << @category2
+    @org2.categories << @category3
     @org2.save!
     @org3 = FactoryGirl.build(:organisation, :email => "", :name => 'Age UK Elderly', :description => 'Care for older people', :address => '64 pinner road', :postcode => 'HA1 3RE', :donation_info => 'www.age-uk.co.uk/donate')
     @org3.categories << @category1
     @org3.save!
-  end
-
-  describe '#not_updated_recently?' do
-    let(:org){FactoryGirl.create(:organisation, updated_at: Time.now)}
-
-    it{expect(org.not_updated_recently?).to be false}
-
-    context "updated too long ago" do
-      let(:org){FactoryGirl.create(:organisation, updated_at: 365.day.ago)}
-      it{expect(org.not_updated_recently?).to be true}
-    end
-
-    context "when updated recently" do
-      let(:org){FactoryGirl.create(:organisation, updated_at: 364.day.ago)}
-      it{expect(org.not_updated_recently?).to be false}
-    end
   end
 
   describe "#not_updated_recently_or_has_no_owner?" do
@@ -163,12 +148,29 @@ describe Organisation, :type => :model do
   end
 
   context 'adding charity superadmins by email' do
-    it 'handles a non-existent email with an error' do
-      expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be_nil
-      expect(@org1.errors[:superadministrator_email]).to eq ["The user email you entered,'nonexistentuser@example.com', does not exist in the system"]
+    it 'handles an invalid email with an error' do
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user'})
+      expect(@org1.errors.messages[:superadministrator_email]).to include "The user email you entered,'user', is invalid"
     end
-    it 'does not update other attributes when there is a non-existent email' do
-      expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be_nil
+    it 'does not email when email is invalid' do
+      expect{
+        @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user'})
+      }.not_to change(ActionMailer::Base.deliveries, :length)
+    end
+    it 'does not update other attributes when email is invalid' do
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user', :name => "Random name"})
+      expect(@org1.name).not_to eq "Random name"
+    end
+
+    it 'handles a non-existent email by inviting user' do
+      expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be true
+      expect(@org1).to be_valid
+      usr = User.find_by(email:'nonexistentuser@example.com')
+      expect(usr).not_to be_nil
+      expect(usr.organisation).to eq @org1
+    end
+    it 'does not update other attributes when there is an invalid email' do
+      expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => 'user'})).to be_nil
       expect(@org1.name).not_to eq 'New name'
     end
     it 'handles a nil email' do
@@ -184,6 +186,13 @@ describe Organisation, :type => :model do
       expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => usr.email})).to be true
       expect(@org1.users).to include usr
     end
+    it 'uses org admin mailer to email existent user when upgraded to org admin' do
+      usr = FactoryGirl.create(:user, :email => 'user@example.org')
+      mockMessage = double("message")
+      expect(mockMessage).to receive :deliver_now
+      expect(OrgAdminMailer).to receive_message_chain(:new_org_admin).with(@org1, [usr.email]).and_return(mockMessage)
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => usr.email})
+    end
     it 'updates other attributes with blank email' do
       expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => ''})).to be true
       expect(@org1.name).to eq 'New name'
@@ -198,6 +207,12 @@ describe Organisation, :type => :model do
   it 'should have and belong to many categories' do
     expect(@org2.categories).to include(@category1)
     expect(@org2.categories).to include(@category2)
+  end
+
+  it 'should have and belong to many categories by types' do
+    expect(@org2.categories.what_they_do).to include(@category3)
+    expect(@org2.categories.who_they_help).to include(@category1)
+    expect(@org2.categories.how_they_help).to include(@category2)
   end
 
   it 'must have search by keyword' do
