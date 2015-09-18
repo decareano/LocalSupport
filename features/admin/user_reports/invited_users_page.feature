@@ -20,6 +20,7 @@ Feature: Invited Users Page
     Then I should see "invited@user.org"
     And I should not see "regular@user.org"
 
+  @vcr
   @javascript
   Scenario: Invitations can be resent
     Given cookies are approved
