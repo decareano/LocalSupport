@@ -31,7 +31,7 @@ Then /^the (proposed organisation|organisation) "(.*?)" should have a (large|sma
   org_id = klass.find_by(name: name).id
   marker_class = (icon_size == "small") ? "measle" : "marker"
   if marker_class == "measle"
-    expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png"
+  expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png"
   else
     expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://mt.googleapis.com/vt/icon/name=icons/spotlight/spotlight-poi.png"
   end
@@ -42,7 +42,6 @@ Then /^I should( not)? see the following (measle|vol_op) markers in the map:$/ d
   klass_hash = {'measle' => '.measle', 'vol_op' => '.vol_op'}
   expect(page).to have_css(klass_hash[klass], :count => table.raw.flatten.length)
   ids = all(klass_hash[klass]).to_a.map { |marker| marker[:'data-id'].to_i }
-
   expect(ids).send(expectation, include(*Organisation.where(name: table.raw.flatten).pluck(:id)))
 end
 
