@@ -37,7 +37,7 @@ end
 
 module MapHelpers
   def stub_request_with_address(address, body = nil)
-    filename = "#{address.gsub(/\s/, '_')}.json"
+    filename = "#{address.downcase.gsub(/,/,'').gsub(/\s/, '_')}.json"
     filename = File.read "test/fixtures/#{filename}"
     stub_request(:any, /maps\.googleapis\.com/).
         to_return(status => 200, :body => body || filename, :headers => {})
@@ -48,8 +48,7 @@ module ProposedOrgHelpers
   def unsaved_proposed_organisation(associated_user = nil)
     proposed_org = ProposedOrganisation.new({name: "Friendly Charity", description: "We are friendly!",
       email: "sample@sample.org", address: "30 pinner road", donation_info: "https://www.donate.com",
-      postcode: 'HA1 4JD', non_profit: true})
-    stub_request_with_address("30 pinner road")
+      postcode: 'HA1 4HZ', non_profit: true})
     proposed_org.users << associated_user if associated_user
     proposed_org
   end
@@ -64,8 +63,21 @@ module ProposedOrgHelpers
     {
       name: 'Friendly charity',
       address: '64 pinner road',
-      description: 'Such friendly so charity'
+      description: 'Such friendly so charity',
+      postcode: 'HA1 4HZ'
     }
+  end
+
+  def visit_proposed_organisation opts
+    visit proposed_organisation_path(ProposedOrganisation.find_by(name: opts.fetch(:name)))
+  end
+
+  def press_acceptance_for_proposed_organisation
+    click_button 'Accept'
+  end
+
+  def assert_on_organisation_show_page opts
+    expect(current_path).to eq organisation_path(Organisation.find_by(name: opts.fetch(:name)))
   end
 end
 

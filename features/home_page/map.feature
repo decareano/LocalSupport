@@ -9,7 +9,11 @@ Feature: Map of local charities
     Given the following organisations exist:
       | name                           | description                    | address        | postcode | website       |
       | Harrow Bereavement Counselling | Harrow Bereavement Counselling | 34 pinner road | HA1 4HZ  | http://a.com/ |
-     
+
+      | Indian Elders Association      | Care for the elderly           | 64 pinner road | HA1 4HZ  | http://b.com/ |
+      | Age UK                         | Care for the Elderly           | 84 pinner road | HA1 4HZ  | http://c.com/ |
+      | Youth UK                       | Care for the Very Young        | 84 pinner road | HA1 4HZ  | http://d.com/ |
+
 
     Given the following users are registered:
       | email                         | password | organisation | confirmed_at         |
@@ -19,13 +23,48 @@ Feature: Map of local charities
   @javascript
   Scenario: Show all charities in map on homepage map
     Given I visit the home page
-    #And show me the page
-
-    
-
     Then I should see the following measle markers in the map:
-    | Harrow Bereavement Counselling | 
+    | Indian Elders Association | Age UK | Harrow Bereavement Counselling | 
 
     
 
  
+
+  @javascript
+  Scenario: Organisation map has small icon for organisation with no users
+    Given I visit the home page
+    Then the organisation "Indian Elders Association" should have a small icon
+
+  Scenario: Changing address on the map changes the map coordinates
+    Given I visit the home page
+    Then the coordinates for "Harrow Bereavement Counselling" and "Youth UK" should not be the same
+    And the coordinates for "Age UK" and "Youth UK" should be the same
+    Given cookies are approved
+    When I am signed in as a charity worker related to "Youth UK"
+    And I update "Youth UK" charity address to be "34 pinner road"
+    And I update "Youth UK" charity postcode to be "HA1 4HZ"
+    And I visit the home page
+    Then the coordinates for "Harrow Bereavement Counselling" and "Youth UK" should be the same
+    Then the coordinates for "Age UK" and "Youth UK" should not be the same
+
+  Scenario: Changing postcode changes the map coordinates
+    Given I visit the home page
+    And the coordinates for "Age UK" and "Youth UK" should be the same
+    Given cookies are approved
+    When I am signed in as a charity worker related to "Youth UK"
+    And I update "Youth UK" charity postcode to be "HA1 4HA"
+    And I visit the home page
+    Then the coordinates for "Age UK" and "Youth UK" should not be the same
+
+  Scenario: Show meaning of large map icons on home page
+    Given I visit the home page
+    And I click "Close"
+    Then I should see "Details updated by the organisation within the last 12 months"
+    Then I should see "Details NOT updated by the organisation within the last 12 months"
+
+  Scenario: Do not show meaning of large map icons on volunteer ops page
+    Given I visit the volunteer opportunities page
+    And I click "Close"
+    Then I should not see "Details updated by the organisation within the last 12 months"
+    Then I should not see "Details NOT updated by the organisation within the last 12 months"
+
