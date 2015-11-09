@@ -19,6 +19,8 @@ Feature: Map of local charities
   @javascript
   Scenario: Show all charities in map on homepage map
     Given I visit the home page
+    #And show me the page
+
     
 
     Then I should see the following measle markers in the map:
