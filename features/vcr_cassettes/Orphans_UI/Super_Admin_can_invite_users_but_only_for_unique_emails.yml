@@ -249,6 +249,7 @@ http_interactions:
     http_version: 
   recorded_at: Sun, 25 Oct 2015 17:10:27 GMT
 <<<<<<< HEAD
+<<<<<<< HEAD
 - request:
     method: get
     uri: http://127.0.0.1:56742/__identify__
@@ -373,6 +374,8 @@ http_interactions:
       string: '67175160'
     http_version: 
   recorded_at: Tue, 10 Nov 2015 20:01:23 GMT
+=======
+>>>>>>> d3cf1c2... before merge with upstream
 =======
 >>>>>>> d3cf1c2... before merge with upstream
 recorded_with: VCR 2.9.3

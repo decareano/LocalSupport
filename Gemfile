@@ -27,9 +27,13 @@ group :development, :test do
   gem 'jasmine-jquery-rails', '2.0.2'
   #gem 'better_errors'
   gem 'binding_of_caller' # plays well with better_errors
+<<<<<<< HEAD
 
   gem 'puffing-billy'
 
+=======
+  
+>>>>>>> d3cf1c2... before merge with upstream
   
 end
 

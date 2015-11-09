@@ -18,6 +18,7 @@ require 'factory_girl_rails'
 require 'aruba/cucumber'
 require 'timecop'
 <<<<<<< HEAD
+<<<<<<< HEAD
 require 'billy/cucumber'
 
 
@@ -29,8 +30,6 @@ end
 
 
 
-=======
->>>>>>> d3cf1c2... before merge with upstream
 
 Dir['../../spec/factories/*.rb'].each {|file| require_relative file }
 
@@ -50,7 +49,7 @@ Capybara.javascript_driver = :poltergeist
 Capybara::Webkit.configure do |config |
 	#config.debug = true
 	config.block_unknown_urls
-	config.allow_url("google.com")
+	#config.allow_url("google.com")
 
 	
 end
