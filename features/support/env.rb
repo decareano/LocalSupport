@@ -17,6 +17,7 @@ require 'rack_session_access/capybara'
 require 'factory_girl_rails'
 require 'aruba/cucumber'
 require 'timecop'
+<<<<<<< HEAD
 require 'billy/cucumber'
 
 
@@ -28,6 +29,8 @@ end
 
 
 
+=======
+>>>>>>> d3cf1c2... before merge with upstream
 
 Dir['../../spec/factories/*.rb'].each {|file| require_relative file }
 
