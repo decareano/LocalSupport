@@ -19,14 +19,26 @@ def find_map_icon klass, org_id
   expect(page).to have_css ".#{klass}[data-id='#{org_id}']"
   find(".#{klass}[data-id='#{org_id}']")
 end
-Then /^the organisation "(.*?)" should have a (large|small) icon$/ do |name, icon_size|
-  org_id = Organisation.find_by(name: name).id
-  klass = (icon_size == "small") ? "measle" : "marker"
-  if klass == "measle"
-    expect(find_map_icon(klass, org_id)["src"]).to eq "https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png"
+Then /^the (proposed organisation|organisation) "(.*?)" should have a (large|small) icon$/ do |type, name, icon_size|
+  klass = case type
+  when 'proposed organisation'
+    ProposedOrganisation
+  when 'organisation'
+    Organisation
   else
-    expect(find_map_icon(klass, org_id)["src"]).to eq "http://mt.googleapis.com/vt/icon/name=icons/spotlight/spotlight-poi.png"
+    raise "Unknown class #{type}"
   end
+  org_id = klass.find_by(name: name).id
+  marker_class = (icon_size == "small") ? "measle" : "marker"
+  if marker_class == "measle"
+    expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png"
+  else
+    expect(find_map_icon(marker_class, org_id)["src"]).to eq "https://mt.googleapis.com/vt/icon/name=icons/spotlight/spotlight-poi.png"
+  end
+end
+
+Before('@billy') do
+  Capybara.current_driver = :webkit_billy
 end
 
 Then /^I should( not)? see the following (measle|vol_op) markers in the map:$/ do |negative, klass, table|
@@ -36,6 +48,7 @@ Then /^I should( not)? see the following (measle|vol_op) markers in the map:$/ d
   ids = all(klass_hash[klass]).to_a.map { |marker| marker[:'data-id'].to_i }
 
   expect(ids).send(expectation, include(*Organisation.where(name: table.raw.flatten).pluck(:id)))
+  
 end
 
 Given(/^the map should show the opportunity titled (.*)$/) do |opportunity_title|
@@ -43,9 +56,9 @@ Given(/^the map should show the opportunity titled (.*)$/) do |opportunity_title
   opportunity_description = VolunteerOp.find_by(title: opportunity_title).description
   icon = find_map_icon('vol_op', id)
   click_twice icon
-  expect(page).to have_css('.arrow_box_vol_op')
-  expect(find('.arrow_box_vol_op').text).to include(opportunity_title)
-  expect(find('.arrow_box_vol_op').text).to include(opportunity_description)
+  expect(page).to have_css('.arrow_box')
+  expect(find('.arrow_box').text).to include(opportunity_title)
+  expect(find('.arrow_box').text).to include(opportunity_description)
 end
 
 def markers
