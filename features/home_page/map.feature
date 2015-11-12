@@ -25,7 +25,7 @@ Feature: Map of local charities
     Given I visit the home page
     Then I should see the following measle markers in the map:
       | Indian Elders Association | Age UK | Harrow Bereavement Counselling |
-    And show me the page
+    
 
   @javascript
   @vcr
