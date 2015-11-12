@@ -7,8 +7,8 @@ Feature: All Users Page
 
   Background:
     Given the following organisations exist:
-      | name            | address        |
-      | My Organisation | 83 pinner road |
+      | name            | address        | postcode |
+      | My Organisation | 83 pinner road | HA1 4HZ  |
     And the following users are registered:
       | email              | password       | superadmin | confirmed_at        | organisation    | pending_organisation |
       | nonsuperadmin@myorg.com | mypassword1234 | false | 2008-01-01 00:00:00 |                 |                      |
@@ -20,7 +20,7 @@ Feature: All Users Page
     Given I am signed in as a superadmin
     When I approve "pending@myorg.com"
     Then I should see "You have approved pending@myorg.com."
-    Then "pending@myorg.com" is a charity superadmin of "My Organisation"
+    Then "pending@myorg.com" is an organisation admin of "My Organisation"
 
   Scenario: As a superadmin deleting a user
     Given I am signed in as a superadmin

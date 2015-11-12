@@ -83,20 +83,20 @@ When /^I search for "(.*?)"$/ do |text|
 end
 
 Given (/^I fill in the new charity page validly$/) do
-  stub_request_with_address("64 pinner road")
   fill_in 'organisation_address', :with => '64 pinner road'
   fill_in 'organisation_name', :with => 'Friendly charity'
+  fill_in 'organisation_postcode', :with => 'HA1 4HZ'
 end
 
 Given (/^I fill in the new charity page validly including the categories:$/) do |categories_table|
   fill_in 'organisation_address', :with => '64 pinner road'
   fill_in 'organisation_name', :with => 'Friendly charity'
+  fill_in 'organisation_postcode', :with => 'HA1 4HZ'
   categories_table.hashes.each do |cat|
     steps %Q{
       And I check the category "#{cat[:name]}"
     }
   end
-  stub_request_with_address("64 pinner road")
 end
 
 Given(/^I am proposing an organisation$/) do
@@ -113,7 +113,6 @@ Given (/^I fill in the proposed charity page validly$/) do
       And I check the category "#{cat}"
     }
   end
-  stub_request_with_address("64 pinner road")
 end
 
 When(/^I check the confirmation box for "(.*?)"$/) do |text|
@@ -137,20 +136,6 @@ Then (/the confirmation box named (.*) should be (checked|unchecked)$/) do |cate
   page.find(:xpath, "//label[text()='#{category}']/preceding-sibling::input[1]").send(assertion, be_checked)
 end
 
-def proposed_org_categories
-  [ 'Animal welfare',
-    'Accommodation',
-    'Education',
-    'Give them things' ]
-end
-
-def proposed_org_fields
-  {
-    name: 'Friendly charity',
-    address: '64 pinner road',
-    description: 'Such friendly so charity'
-  }
-end
 
 Then(/^I should see all the proposed organisation fields$/) do
   proposed_org_fields.each_value do |value|
@@ -228,7 +213,6 @@ Given /^I edit the charity email to be "(.*?)"$/ do |email|
 end
 
 When /^I edit the charity address to be "(.*?)"$/ do |address|
-  stub_request_with_address(address)
   fill_in('organisation_address', :with => address)
 end
 
@@ -364,12 +348,17 @@ Then(/^I should not see "(.*?)"  within "(.*?)"$/) do |text, selector|
   within('.' + selector) { expect(page).not_to have_content text}
 end
 
+Given /^I update "(.*?)" charity postcode to be "(.*?)"$/ do |name, postcode|
+  steps %Q{And I visit the edit page for the organisation named "#{name}"}
+  fill_in('organisation_postcode', :with => postcode)
+  click_button 'Update Organisation'
+end
+
 Given /^I edit the charity address to be "(.*?)" when Google is indisposed$/ do |address|
   body = %Q({
 "results" : [],
 "status" : "OVER_QUERY_LIMIT"
 })
-  stub_request_with_address(address, body)
   fill_in('organisation_address', :with => address)
 end
 
@@ -379,6 +368,10 @@ end
 
 Then /^the address for "(.*?)" should be "(.*?)"$/ do |name, address|
   Organisation.find_by_name(name).address.should == address
+end
+
+Then /^the postcode for "(.*?)" should be "(.*?)"$/ do |name, postcode|
+  Organisation.find_by_name(name).postcode.should == postcode
 end
 
 When /^I fill in "(.*?)" with "(.*?)" within the navbar$/ do |field, value|
@@ -455,7 +448,7 @@ When /^I approve "(.*?)"$/ do |email|
   end
 end
 
-Then(/^"(.*?)" is a charity superadmin of "(.*?)"$/) do |user_email, org_name|
+Then(/^"(.*?)" is an organisation admin of "(.*?)"$/) do |user_email, org_name|
   user = User.find_by_email(user_email)
   org = Organisation.find_by_name(org_name)
   user.organisation.should == org

@@ -11,52 +11,17 @@ describe Organisation, :type => :model do
     @category3 = FactoryGirl.create(:category, :charity_commission_id => 108)
     @category4 = FactoryGirl.create(:category, :charity_commission_id => 302)
     @category5 = FactoryGirl.create(:category, :charity_commission_id => 306)
-    @org1 = FactoryGirl.build(:organisation, :email => "", :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 3TE', :donation_info => 'www.harrow-bereavment.co.uk/donate')
+    @org1 = FactoryGirl.build(:organisation, :email => "", :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '84 pinner road', :postcode => 'HA1 4HA', :donation_info => 'www.harrow-bereavment.co.uk/donate')
     @org1.save!
     @org2 = FactoryGirl.build(:organisation, :name => 'Indian Elders Association',:email => "",
-                              :description => 'Care for the elderly', :address => '64 pinner road', :postcode => 'HA1 3RE', :donation_info => 'www.indian-elders.co.uk/donate')
+                              :description => 'Care for the elderly', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.indian-elders.co.uk/donate')
     @org2.categories << @category1
     @org2.categories << @category2
     @org2.categories << @category3
     @org2.save!
-    @org3 = FactoryGirl.build(:organisation, :email => "", :name => 'Age UK Elderly', :description => 'Care for older people', :address => '64 pinner road', :postcode => 'HA1 3RE', :donation_info => 'www.age-uk.co.uk/donate')
+    @org3 = FactoryGirl.build(:organisation, :email => "", :name => 'Age UK Elderly', :description => 'Care for older people', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.age-uk.co.uk/donate')
     @org3.categories << @category1
     @org3.save!
-  end
-
-  describe '#not_updated_recently?' do
-    let(:org){FactoryGirl.create(:organisation, updated_at: Time.now)}
-
-    it{expect(org.not_updated_recently?).to be false}
-
-    context "updated too long ago" do
-      let(:org){FactoryGirl.create(:organisation, updated_at: 365.day.ago)}
-      it{expect(org.not_updated_recently?).to be true}
-    end
-
-    context "when updated recently" do
-      let(:org){FactoryGirl.create(:organisation, updated_at: 364.day.ago)}
-      it{expect(org.not_updated_recently?).to be false}
-    end
-  end
-
-  describe "#not_updated_recently_or_has_no_owner?" do
-    let(:subject){FactoryGirl.create(:organisation, :name => "Org with no owner", :updated_at => 364.day.ago)}
-    context 'has no owner but updated recently' do
-      it{expect(subject.not_updated_recently_or_has_no_owner?).to be true}
-    end
-    context 'has owner but old update' do
-      let(:subject){FactoryGirl.create(:organisation_with_owner, :updated_at => 366.day.ago)}
-      it{expect(subject.not_updated_recently_or_has_no_owner?).to be true}
-    end
-    context 'has no owner and old update' do 
-      let(:subject){FactoryGirl.create(:organisation, :updated_at => 366.day.ago)}
-      it{expect(subject.not_updated_recently_or_has_no_owner?).to be true}
-    end
-    context 'has owner and recent update' do
-      let(:subject){FactoryGirl.create(:organisation_with_owner, :updated_at => 364.day.ago)}
-      it{expect(subject.not_updated_recently_or_has_no_owner?).to be false}
-    end
   end
 
   describe "#gmaps4rails_marker_attrs" do
@@ -147,8 +112,8 @@ describe Organisation, :type => :model do
   end
 
   context 'validating URLs' do
-    subject(:no_http_org) { FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 3TE', :donation_info => 'www.harrow-bereavment.co.uk/donate') }
-    subject(:empty_website)  {FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 3TE', :donation_info => '', :website => '')}
+    subject(:no_http_org) { FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.harrow-bereavment.co.uk/donate') }
+    subject(:empty_website)  {FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => '', :website => '')}
     it 'if lacking protocol, http is prefixed to URL when saved' do
       no_http_org.save!
       expect(no_http_org.donation_info).to include('http://')
@@ -164,12 +129,29 @@ describe Organisation, :type => :model do
   end
 
   context 'adding charity superadmins by email' do
-    it 'handles a non-existent email with an error' do
-      expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be_nil
-      expect(@org1.errors[:superadministrator_email]).to eq ["The user email you entered,'nonexistentuser@example.com', does not exist in the system"]
+    it 'handles an invalid email with an error' do
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user'})
+      expect(@org1.errors.messages[:superadministrator_email]).to include "The user email you entered,'user', is invalid"
     end
-    it 'does not update other attributes when there is a non-existent email' do
-      expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be_nil
+    it 'does not email when email is invalid' do
+      expect{
+        @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user'})
+      }.not_to change(ActionMailer::Base.deliveries, :length)
+    end
+    it 'does not update other attributes when email is invalid' do
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'user', :name => "Random name"})
+      expect(@org1.name).not_to eq "Random name"
+    end
+
+    it 'handles a non-existent email by inviting user' do
+      expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => 'nonexistentuser@example.com'})).to be true
+      expect(@org1).to be_valid
+      usr = User.find_by(email:'nonexistentuser@example.com')
+      expect(usr).not_to be_nil
+      expect(usr.organisation).to eq @org1
+    end
+    it 'does not update other attributes when there is an invalid email' do
+      expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => 'user'})).to be_nil
       expect(@org1.name).not_to eq 'New name'
     end
     it 'handles a nil email' do
@@ -184,6 +166,13 @@ describe Organisation, :type => :model do
       usr = FactoryGirl.create(:user, :email => 'user@example.org')
       expect(@org1.update_attributes_with_superadmin({:superadmin_email_to_add => usr.email})).to be true
       expect(@org1.users).to include usr
+    end
+    it 'uses org admin mailer to email existent user when upgraded to org admin' do
+      usr = FactoryGirl.create(:user, :email => 'user@example.org')
+      mockMessage = double("message")
+      expect(mockMessage).to receive :deliver_now
+      expect(OrgAdminMailer).to receive_message_chain(:new_org_admin).with(@org1, [usr.email]).and_return(mockMessage)
+      @org1.update_attributes_with_superadmin({:superadmin_email_to_add => usr.email})
     end
     it 'updates other attributes with blank email' do
       expect(@org1.update_attributes_with_superadmin({:name => 'New name',:superadmin_email_to_add => ''})).to be true
@@ -224,10 +213,12 @@ describe Organisation, :type => :model do
   end
 
   describe 'Creating of Organisations from CSV file' do
-    before(:all){ @headers = 'Title,Charity Number,Activities,Contact Name,Contact Address,website,Contact Telephone,date registered,date removed,accounts date,spending,income,company number,OpenlyLocalURL,twitter account name,facebook account name,youtube account name,feed url,Charity Classification,signed up for 1010,last checked,created at,updated at,Removed?'.split(',')}
-
+    before(:each) do
+      allow_any_instance_of(Organisation).to receive(:geocode)
+      @headers = 'Title,Charity Number,Activities,Contact Name,Contact Address,website,Contact Telephone,date registered,date removed,accounts date,spending,income,company number,OpenlyLocalURL,twitter account name,facebook account name,youtube account name,feed url,Charity Classification,signed up for 1010,last checked,created at,updated at,Removed?'.split(',')
+    end
     it 'must not override an existing organisation' do
-      fields = CSV.parse('INDIAN ELDERS ASSOCIATION,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH,COLLEGE ROAD, HARROW, HA1 1BA",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
+      fields = CSV.parse('INDIAN ELDERS ASSOCIATION,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH,COLLEGE ROAD, HARROW, HA1 4HZ",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
       org = create_organisation(fields)
       expect(org).to be_nil
     end
@@ -279,12 +270,12 @@ describe Organisation, :type => :model do
     end
 
     it 'must be able to generate Organisation from text representation ensuring words in correct case and postcode is extracted from address' do
-      fields = CSV.parse('HARROW BAPTIST CHURCH,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 1BA",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
+      fields = CSV.parse('HARROW BAPTIST CHURCH,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 4HZ",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
       org = create_organisation(fields)
       expect(org.name).to eq('Harrow Baptist Church')
       expect(org.description).to eq('No information recorded')
       expect(org.address).to eq('Harrow Baptist Church, College Road, Harrow')
-      expect(org.postcode).to eq('HA1 1BA')
+      expect(org.postcode).to eq('HA1 4HZ')
       expect(org.website).to eq('http://www.harrow-baptist.org.uk')
       expect(org.telephone).to eq('020 8863 7837')
       expect(org.donation_info).to eq("")
@@ -294,7 +285,7 @@ describe Organisation, :type => :model do
     it 'should raise error if no columns found' do
       #Headers are without Title header
       @headers = 'Charity Number,Activities,Contact Name,Contact Address,website,Contact Telephone,date registered,date removed,accounts date,spending,income,company number,OpenlyLocalURL,twitter account name,facebook account name,youtube account name,feed url,Charity Classification,signed up for 1010,last checked,created at,updated at,Removed?'.split(',')
-      fields = CSV.parse('HARROW BAPTIST CHURCH,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 1BA",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
+      fields = CSV.parse('HARROW BAPTIST CHURCH,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 4HZ",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
       expect(lambda{
         org = create_organisation(fields)
       }).to raise_error
@@ -308,19 +299,19 @@ describe Organisation, :type => :model do
 
     context "importing category relations" do
       let(:fields) do
-        CSV.parse('HARROW BEREAVEMENT COUNSELLING,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 1BA",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
+        CSV.parse('HARROW BEREAVEMENT COUNSELLING,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 4HZ",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,"207,305,108,302,306",false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
       end
       let(:row) do
         CSV::Row.new(@headers, fields.flatten)
       end
       let(:fields_cat_missing) do
-        CSV.parse('HARROW BEREAVEMENT COUNSELLING,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 1BA",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,,false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
+        CSV.parse('HARROW BEREAVEMENT COUNSELLING,1129832,NO INFORMATION RECORDED,MR JOHN ROSS NEWBY,"HARROW BAPTIST CHURCH, COLLEGE ROAD, HARROW, HA1 4HZ",http://www.harrow-baptist.org.uk,020 8863 7837,2009-05-27,,,,,,http://OpenlyLocal.com/charities/57879-HARROW-BAPTIST-CHURCH,,,,,,false,2010-09-20T21:38:52+01:00,2010-08-22T22:19:07+01:00,2012-04-15T11:22:12+01:00,*****')
       end
       let(:row_cat_missing) do
         CSV::Row.new(@headers, fields_cat_missing.flatten)
       end
       it 'must be able to avoid org category relations from text file when org does not exist' do
-        @org4 = FactoryGirl.build(:organisation, :name => 'Fellowship For Management In Food Distribution', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 3TE', :donation_info => 'www.harrow-bereavment.co.uk/donate')
+        @org4 = FactoryGirl.build(:organisation, :name => 'Fellowship For Management In Food Distribution', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.harrow-bereavment.co.uk/donate')
         @org4.save!
         [102,206,302].each do |id|
           FactoryGirl.build(:category, :charity_commission_id => id).save!
@@ -378,20 +369,6 @@ describe Organisation, :type => :model do
     end
   end
 
-  it 'should geocode when address changes' do
-    new_address = '60 pinner road'
-    expect(@org1).to receive(:geocode)
-    @org1.update_attributes :address => new_address
-  end
-
-  it 'should geocode when new object is created' do
-    address = '60 pinner road'
-    postcode = 'HA1 3RE'
-    org = FactoryGirl.build(:organisation,:address => address, :postcode => postcode, :name => 'Happy and Nice', :gmaps => true)
-    expect(org).to receive(:geocode)    
-    org.save
-  end
-  
   # not sure if we need SQL injection security tests like this ...
   # org = Organisation.new(:address =>"blah", :gmaps=> ";DROP DATABASE;")
   # org = Organisation.new(:address =>"blah", :name=> ";DROP DATABASE;")
@@ -564,11 +541,11 @@ describe Organisation, :type => :model do
     FactoryGirl.factories.clear
     FactoryGirl.find_definitions
 
-    @org1 = FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 3TE', :donation_info => 'www.harrow-bereavment.co.uk/donate')
+    @org1 = FactoryGirl.build(:organisation, :name => 'Harrow Bereavement Counselling', :description => 'Bereavement Counselling', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.harrow-bereavment.co.uk/donate')
     @org1.save!
-    @org2 = FactoryGirl.build(:organisation, :name => 'Indian Elders Associaton', :description => 'Care for the elderly', :address => '64 pinner road', :postcode => 'HA1 3RE', :latitude => 77, :longitude => 77, :donation_info => 'www.indian-elders.co.uk/donate')
+    @org2 = FactoryGirl.build(:organisation, :name => 'Indian Elders Associaton', :description => 'Care for the elderly', :address => '64 pinner road', :postcode => 'HA1 4HZ', :latitude => 77, :longitude => 77, :donation_info => 'www.indian-elders.co.uk/donate')
     @org2.save!
-    @org3 = FactoryGirl.build(:organisation, :name => 'Age UK Elderly', :description => 'Care for older people', :address => '64 pinner road', :postcode => 'HA1 3RE', :donation_info => 'www.age-uk.co.uk/donate')
+    @org3 = FactoryGirl.build(:organisation, :name => 'Age UK Elderly', :description => 'Care for older people', :address => '64 pinner road', :postcode => 'HA1 4HZ', :donation_info => 'www.age-uk.co.uk/donate')
     @org3.save!
   end
   
@@ -647,7 +624,7 @@ describe Organisation, '::filter_by_categories' do
       :name => 'Harrow Bereavement Counselling',
       :description => 'Bereavement Counselling',
       :address => '64 pinner road',
-      :postcode => 'HA1 3TE',
+      :postcode => 'HA1 4HZ',
       :donation_info => 'www.harrow-bereavment.co.uk/donate',
     )
   end
@@ -659,7 +636,7 @@ describe Organisation, '::filter_by_categories' do
       :email => "",
       :description => 'Care for the elderly',
       :address => '64 pinner road',
-      :postcode => 'HA1 3RE',
+      :postcode => 'HA1 4HZ',
       :donation_info => 'www.indian-elders.co.uk/donate'
     ).tap { |o| o.categories << category1 ; o.categories << category2 }
   end
@@ -671,7 +648,7 @@ describe Organisation, '::filter_by_categories' do
       :name => 'Age UK Elderly',
       :description => 'Care for older people',
       :address => '64 pinner road',
-      :postcode => 'HA1 3RE',
+      :postcode => 'HA1 4HZ',
       :donation_info => 'www.age-uk.co.uk/donate',
     ).tap { |o| o.categories  << category1 }
   end

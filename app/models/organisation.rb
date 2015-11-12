@@ -1,55 +1,34 @@
 require 'csv'
-
-class String
-  def humanized_all_first_capitals
-    self.humanize.split(' ').map{|w| w.capitalize}.join(' ')
-  end
-end
+require 'string'
 
 class Organisation < BaseOrganisation
-  #validates_presence_of :website, :with => /http:\/\//
+
   has_many :volunteer_ops
   has_many :users
   has_many :edits, class_name: 'ProposedOrganisationEdit', :dependent => :destroy
-  # Setup accessible (or protected) attributes for your model
-  # prevents mass assignment on other fields not in this list
-  #attr_accessible :name, :description, :address, :postcode, :email, :website, :telephone, :donation_info, :publish_address, :publish_phone, :publish_email, :category_organisations_attributes
-  accepts_nested_attributes_for :users
+
+  accepts_nested_attributes_for :users # TODO check if needed
+
   scope :order_by_most_recent, -> { order('organisations.updated_at DESC') }
   scope :not_null_email, lambda {where("organisations.email <> ''")}
+
   # Should we not use :includes, which pulls in extra data? http://nlingutla.com/blog/2013/04/21/includes-vs-joins-in-rails/
   # Alternative => :joins('LEFT OUTER JOIN users ON users.organisation_id = organisations.id)
   # Difference between inner and outer joins: http://stackoverflow.com/a/38578/2197402
+
   scope :null_users, lambda { includes(:users).where("users.organisation_id IS NULL").references(:users) }
   scope :without_matching_user_emails, lambda {where("organisations.email NOT IN (#{User.select('email').to_sql})")}
 
-
   after_save :uninvite_users, if: ->{ email_changed? }
 
-  
   def uninvite_users
     users.invited_not_accepted.update_all(organisation_id: nil)
   end
 
-  #TODO: Give this TLC and refactor the flow or refactor out responsibilities
-  # This method both adds new editors and/or updates attributes
   def update_attributes_with_superadmin(params)
-    email = params[:superadmin_email_to_add]
-    params.delete :superadmin_email_to_add
-    if email.blank?
-      return self.update_attributes(params)   # explicitly call with return to return boolean instead of nil
-    end
-    #Transactions are protective blocks where SQL statements are only permanent if they can all succeed as one atomic action.
-    ActiveRecord::Base.transaction do
-      usr = User.find_by_email(email)
-      if usr.present?
-        self.users << usr
-        return self.update_attributes(params)
-      else
-        self.errors.add(:superadministrator_email, "The user email you entered,'#{email}', does not exist in the system")
-        raise ActiveRecord::Rollback    # is this necessary? Doesn't the transaction block rollback the change with `usr` if update_attributes fails?
-      end
-    end
+    email = extract_email_from(params)
+    return unless email.blank? || can_add_or_invite_admin?(email)
+    self.update_attributes(params)
   end
 
   def self.search_by_keyword(keyword)
@@ -155,12 +134,35 @@ class Organisation < BaseOrganisation
     end
   end
 
-  def not_updated_recently_or_has_no_owner?
-    self.users.empty? || not_updated_recently?
+  private
+
+  def embellish_invite_error_and_add_to_model(email, error_msg)
+    error_msg = ("Error: Email is invalid" == error_msg) ? "The user email you entered,'#{email}', is invalid" : error_msg
+    self.errors.add(:superadministrator_email, error_msg)
   end
 
-  private
-  
+  def add_and_notify(usr)
+    self.users << usr
+    org_admin_email = [usr.email]
+    OrgAdminMailer.new_org_admin(self, org_admin_email).deliver_now
+  end
+
+  def can_add_or_invite_admin?(email)
+    return false if email.blank?
+    usr = User.find_by_email(email)
+    return add_and_notify(usr) if usr.present?
+    result = ::SingleInviteJob.new(self, email).invite_user
+    return true if result.invited_user?
+    embellish_invite_error_and_add_to_model(email,result.error)
+    false
+  end
+
+  def extract_email_from(params)
+    email = params[:superadmin_email_to_add]
+    params.delete :superadmin_email_to_add
+    email
+  end
+
   def self.table
     arel_table
   end
