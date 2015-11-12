@@ -29,6 +29,7 @@ group :development, :test do
   #gem 'better_errors'
   gem 'binding_of_caller' # plays well with better_errors
   gem 'vcr'
+  gem 'puffing-billy'
 end
 
 group :development do

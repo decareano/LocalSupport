@@ -37,8 +37,11 @@ Then /^the (proposed organisation|organisation) "(.*?)" should have a (large|sma
   end
 end
 
+Before('@billy') do
+  Capybara.current_driver = :webkit_billy
+end
+
 Then /^I should( not)? see the following (measle|vol_op) markers in the map:$/ do |negative, klass, table|
-  
   expectation = negative ? :not_to : :to
   klass_hash = {'measle' => '.measle', 'vol_op' => '.vol_op'}
   expect(page).to have_css(klass_hash[klass], :count => table.raw.flatten.length)
