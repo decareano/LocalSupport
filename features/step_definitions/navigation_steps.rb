@@ -42,6 +42,8 @@ def paths(location)
   }[location]
 end
 
+
+
 Then /^I (visit|should be on) the (.*) page$/ do |mode, location|
   location.downcase!
   raise "No matching path found for #{location}" if paths(location).nil?

@@ -17,6 +17,17 @@ require 'rack_session_access/capybara'
 require 'factory_girl_rails'
 require 'aruba/cucumber'
 require 'timecop'
+require 'billy/cucumber'
+
+
+After do
+	Capybara.use_default_driver
+end
+
+
+
+
+
 
 Dir['../../spec/factories/*.rb'].each {|file| require_relative file }
 
@@ -32,10 +43,13 @@ end
 Capybara.default_selector = :css
 Capybara.default_wait_time = 3
 
-Capybara.javascript_driver = :webkit
+Capybara.javascript_driver = :poltergeist
 Capybara::Webkit.configure do |config |
 	#config.debug = true
 	config.block_unknown_urls
+	config.allow_url("google.com")
+
+	
 end
 
 # By default, any exception happening in your Rails application will bubble up
@@ -105,3 +119,5 @@ end
 After('@time_travel') do
   Timecop.return
 end
+
+
