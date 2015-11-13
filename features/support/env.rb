@@ -17,8 +17,7 @@ require 'rack_session_access/capybara'
 require 'factory_girl_rails'
 require 'aruba/cucumber'
 require 'timecop'
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 require 'billy/cucumber'
 
 
