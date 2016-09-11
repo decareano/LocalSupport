@@ -1,18 +1,31 @@
 class VolunteerOpsController < ApplicationController
-  layout 'two_columns'
-  before_filter :authorize, :except => [:show, :index]
+  layout 'two_columns_with_map'
+  before_action :authorize, except: [:search, :show, :index]
+  before_action :set_organisation, only: [:new, :create]
+  
+
+  def search
+    @query = params[:q]
+    @volunteer_ops = VolunteerOp.order_by_most_recent.search_for_text(@query)
+    flash.now[:alert] = SEARCH_NOT_FOUND if @volunteer_ops.empty?
+    @markers = BuildMarkersWithInfoWindow.with(@volunteer_ops,self)
+    render template: 'volunteer_ops/index'
+  end
 
   def index
     @volunteer_ops = VolunteerOp.order_by_most_recent
-    @organisations = @volunteer_ops.map { |op| op.organisation }
-    @markers = build_map_markers(@organisations)
+    @volunteer_ops = Feature.active?(:doit_volunteer_opportunities) ? @volunteer_ops : @volunteer_ops.local_only
+    @markers = BuildMarkersWithInfoWindow.with(@volunteer_ops,self)
   end
 
   def show
-    @volunteer_op = VolunteerOp.find(params[:id])
-    @organisation = @volunteer_op.organisation
+    @volunteer_ops = VolunteerOp.where(id: params[:id])
+    @volunteer_op = @volunteer_ops.first
+    @organisation = Organisation.friendly.find(@volunteer_op.organisation_id)
+    organisations = Organisation.where(id: @organisation.id)
     @editable = current_user.can_edit?(@organisation) if current_user
-    @markers = build_map_markers([@organisation])
+
+    @markers = BuildMarkersWithInfoWindow.with(@volunteer_ops,self)
   end
 
   def new
@@ -20,19 +33,21 @@ class VolunteerOpsController < ApplicationController
   end
 
   def create
-    params[:volunteer_op][:organisation_id] = params[:organisation_id]
+    params[:volunteer_op][:organisation_id] = @organisation.id
     @volunteer_op = VolunteerOp.new(volunteer_op_params)
     if @volunteer_op.save
       redirect_to @volunteer_op, notice: 'Volunteer op was successfully created.'
     else
-      render action: 'new'
+      render :new
     end
   end
 
   def edit
-    @volunteer_op = VolunteerOp.find(params[:id])
-    @organisation = @volunteer_op.organisation
-    @markers = build_map_markers([@organisation])
+    @volunteer_ops = VolunteerOp.where(id: params[:id])
+    @volunteer_op = @volunteer_ops.first
+    organisations = Organisation.where(id: @volunteer_op.organisation_id)
+    @organisation = organisations.first!
+    @markers = BuildMarkersWithInfoWindow.with(@volunteer_ops,self)
   end
 
   def update
@@ -45,49 +60,45 @@ class VolunteerOpsController < ApplicationController
     end
   end
 
+  def destroy
+    @volunteer_op = VolunteerOp.find(params[:id])
+    @volunteer_op.destroy
+    flash[:success] = "Deleted #{@volunteer_op.title}"
+
+    redirect_to volunteer_ops_path
+  end
+
   def volunteer_op_params
     params.require(:volunteer_op).permit(
       :description,
       :title,
       :organisation_id,
+      :address,
+      :postcode
     )
   end
-  
-  private
 
-  def build_map_markers(organisations)
-    ::MapMarkerJson.build(organisations) do |org, marker|
-      marker.lat org.latitude
-      marker.lng org.longitude
-      marker.infowindow render_to_string( partial: 'popup', locals: {org: org})
-      marker.json(
-        custom_marker: render_to_string(
-          partial: 'shared/custom_marker',
-          locals: { attrs: [ActionController::Base.helpers.asset_path("volunteer_icon.png"),
-                    'data-id' => org.id,
-                    class: 'vol_op', title: "Click here to see volunteer opportunities at #{org.name}"]}
-        ),
-        index: 1,
-        type: 'vol_op'
-      )
-    end
-  end
+  private
 
   def authorize
     # set @organisation
     # then can make condition:
     # unless current_user.can_edit? organisation
-    unless org_owner? or admin?
-      flash[:error] = 'You must be signed in as an organisation owner or site admin to perform this action!'
+    unless org_owner? or superadmin?
+      flash[:error] = 'You must be signed in as an organisation owner or site superadmin to perform this action!'
       redirect_to '/' and return
     end
   end
 
   def org_owner?
     if params[:organisation_id].present? && current_user.present? && current_user.organisation.present?
-      current_user.organisation.id.to_s == params[:organisation_id]
+      current_user.organisation.friendly_id == params[:organisation_id]
     else
       current_user.organisation == VolunteerOp.find(params[:id]).organisation if current_user.present? && current_user.organisation.present?
     end
+  end
+  
+  def set_organisation
+    @organisation = Organisation.friendly.find(params[:organisation_id])
   end
 end
